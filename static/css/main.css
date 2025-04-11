@@ -1,0 +1,77 @@
+    html {
+       font-family: "San Francisco Text", sans-serif;
+    }
+    a {
+       color: #8888cc;
+       text-decoration: none;
+    }
+    #map {
+      height: 80vh;
+      z-index: 10;
+    }
+   .controls {
+      margin: 10px;
+      gap: 10px;
+      width: 100%;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    #load {
+      padding: 5px 10px;
+      background-color: #a5156e;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #load:hover {
+      opacity: 90%;
+    }
+    label {
+      padding: 5px 1px;
+    }
+    .tooltip-button {
+      float: right;
+      position: relative;
+      z-index:100;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      font-size: 16px;
+      cursor: pointer;
+      text-align: center;
+      line-height: 30px;
+    }
+
+    /* Tooltip container */
+    .tooltip-button .tooltip {
+      visibility: hidden;
+      background-color: #666666;
+      color: #eeeeff;
+      text-align: left;
+      border-radius: 5px;
+      padding: 17px 20px;
+      position: fixed; /* Fixed to appear relative to the viewport */
+      top: 45%; /* Center vertically */
+      left: 50%; /* Center horizontally */
+      transform: translate(-50%, -50%); /* Center the tooltip exactly */
+      z-index: 1000; /* Ensure it appears on top */ 
+      font-size: 1.7vw;
+      line-height: 2.1vw;
+      width: 70vw;
+    }
+
+    /* Show the tooltip on hover */
+    .tooltip-button:hover .tooltip {
+      visibility: visible;
+    }
+    .custom-cross {
+        color: #000000;
+        text-shadow: #ccf 1px 0 10px;
+        font-size: 25px;
+        font-weight: bold;
+        line-height: 25px;
+    }

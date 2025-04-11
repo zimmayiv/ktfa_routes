@@ -1,0 +1,153 @@
+{% extends "mapbase.html" %}
+
+{% block title %}Update route {{ name }}{% endblock %}
+
+{% block styles %}
+
+<style type="text/css">
+select {
+    min-width: 100px;
+}
+
+#secondary-buttons {
+    text-color: #667777;
+    font-size: 11pt;
+}
+
+#update-btn {
+    display: block;
+    margin: auto;
+    color: #ffffff;
+    font-size: 15pt;
+    background-color: #3344aa;
+    border-radius: 10px;
+    padding: 10px;
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+    {% include 'draw.js' %}
+
+    {% include 'saveload.js' %}
+
+
+function formatDate(yyyymmdd) {
+  const year = yyyymmdd.toString().slice(0, 4);
+  const month = parseInt(yyyymmdd.toString().slice(4, 6)) - 1;
+  const day = yyyymmdd.toString().slice(6, 8);
+  
+  const date = new Date(year, month, day);
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  
+  return date.toLocaleDateString('en-US', options);
+}
+
+let lastHeadcount = 0;
+
+const name = '{{ name }}';
+
+fetch('../list')
+  .then(response => response.json())
+  .then(data => {
+     const urls = data[name];
+     for (let u in urls) {
+         let filename = urls[u].split('/').pop().split('.').slice(0, -1).join('.');
+         fetch('..'+urls[u]).then(response => response.json())
+             .then(geojsonData => {
+                 let opt = document.createElement("option");
+                 let nameParts = filename.split('-');
+                 opt.textContent = formatDate(nameParts[0]);
+                 if (nameParts[1]) {
+                     opt.textContent += ' (count ' + nameParts[1] + ')';
+                     if (u == 0) {
+                         lastHeadcount = nameParts[1];
+                     }
+                 }
+                 opt.addEventListener("click", function () {
+                     drawnItems.clearLayers();
+		     L.geoJSON(geojsonData, {
+			 onEachFeature: function (feature, layer) {
+			     if (feature.properties && feature.properties.popupContent) {
+				 layer.bindPopup(feature.properties.popupContent);
+			     }
+			     drawnItems.addLayer(layer);
+			 },
+		     }).addTo(map);
+                 });
+                 document.getElementById("selector").appendChild(opt); 
+             });
+     } 
+  });
+
+    document.getElementById('update-btn').addEventListener('click', () => {
+      const data = drawnItems.toGeoJSON();
+      let lineCount = 0;
+      drawnItems.eachLayer(layer => {
+          // Convert to GeoJSON and check geometry type
+          const geojson = layer.toGeoJSON();
+          if (geojson.geometry.type === 'LineString') {
+              lineCount++;
+          }
+      });
+
+      if (lineCount == 1) {
+  	  const today = new Date();
+	  const dateString = today.toISOString().slice(0, 10).replace(/-/g, '');
+	  const headcount = prompt('Headcount:', lastHeadcount);
+          if (headcount) {
+	      const filename = `${dateString}-${headcount}.geojson`;
+	      // todo: figure out what to do about counts. default, whether to require. if not, remove hyphen if empty
+	      // should /save have security? how would that even work? would need to re-prompt password, check it in post
+	      fetch('/save', {
+		  method: 'POST',
+		  headers: {
+		    'Content-Type': 'application/json',
+		    'route': '{{ name }}',
+		    'filename': filename
+	      },
+	      body: JSON.stringify(data)
+	      }).then(response => response.text())
+	      .then(result => alert(result)).then(() => window.location.href = "/");
+          }
+          else {
+              alert("Please enter a whole number headcount.");
+          }
+      } else {
+          alert("Please make sure there is exactly one line drawn.");
+      }
+    }  
+    );
+
+{% endblock %}
+
+{% block buttons %}
+<button class="tooltip-button">
+    ?
+    <span class="tooltip">
+        <p>You can do any of the following:
+            <ol>
+                <li>Draw a route from scratch (Annie has a  excellent tutorial pinned on #route-mapping in Discord).</li>
+                <li>Start from a previous version of this route by choosing from the dropdown menu under the map, and edit/update it (edit icon is second from the bottom on the left side of the map).</li>
+                <li>Load a route from a local geoJSON file (under "controls for save/loading geoJSONS".</li>
+            </ol>
+            When you're done, click "Update route". Please make sure you only have one linestring (route drawn) when saving! You'll be prompted to update the headcount before it saves; the default value will be the headcount for the last version of the route; if you're not sure, you should just leave it.
+        </p>
+    </span>
+  </button>
+
+<div class="controls">
+Load previous version of route:
+<select id="selector">
+<option></option>
+</select>
+
+<button id="update-btn">Update route</button>
+</div>
+
+<details id="secondary-buttons">
+    <summary>Controls for save/loading local geoJSONs</summary>
+    {% include 'buttons.html' %}
+</details>
+{% endblock %}

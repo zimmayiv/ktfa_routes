@@ -1,0 +1,180 @@
+{% extends "mapbase.html" %}
+
+{% block title %}All KtfA routes{% endblock %}
+
+{% block styles %}
+
+<style type="text/css">
+.legendItem {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.legendLine {
+    width: 40px;
+    height: 4px;
+    margin-right: 10px;
+}
+
+.legendAux {
+   font-size: 11pt;
+   color: #aaaaaa;
+   visibility: hidden;
+}
+
+.legendItem:hover .legendAux {
+   visibility: visible;
+}
+
+.legendAux a {
+   text-decoration: none;
+   color: #aaaabb;
+}
+
+.legendAux a:hover {
+   color: #8888bb;
+}
+</style>
+
+{% endblock %} 
+
+{% block scripts %}
+
+const legend = document.getElementById('legend');
+
+let legendColor = {{ legendColor | tojson }};
+
+function dateFromPath(filepath) {
+  const filename = filepath.split('/').pop(); // e.g. "20250308-10.geojson"
+
+  // Extract the 8-digit date at the start of the filename
+  const match = filename.match(/^(\d{8})/);
+  if (!match) {
+    console.warn('No valid date found in filename:', filename);
+    return null;
+  }
+
+  const dateStr = match[1]; // "20250308"
+
+  const year = parseInt(dateStr.slice(0, 4), 10);
+  const month = parseInt(dateStr.slice(4, 6), 10) - 1; // JS months are 0-indexed
+  const day = parseInt(dateStr.slice(6, 8), 10);
+
+  const dateObj = new Date(year, month, day);
+  if (isNaN(dateObj)) {
+    console.warn('Invalid date:', dateStr);
+    return null;
+  }
+
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return dateObj.toLocaleDateString('en-US', options); // e.g. "March 8, 2025"
+}
+
+fetch('/list')
+  .then(response => response.json())
+  .then(data => {
+      for (let k in data) {
+	  let item = document.getElementById(k);
+	  let itemLinks = [...item.querySelectorAll("a")];
+	  itemLinks[1].addEventListener("click", function () {
+	      const password = prompt("Enter password to edit/view count: ");
+	      if (password) {
+		const form = document.createElement("form");
+		form.method = "POST";
+		form.action = '/edit/' + k;
+
+		const passwordField = document.createElement("input");
+		passwordField.type = "hidden";
+		passwordField.name = "password";
+		passwordField.value = password;
+
+		form.appendChild(passwordField);
+		document.body.appendChild(form);
+		form.submit();
+	      }
+	  });
+	  for (let d in data[k]) { 
+	      const url = data[k][d];
+	      fetch(url).then(response => response.json())
+		  .then(geojsonData => {
+		      let markers = []; // Store markers separately
+		      let markersVisible = false; // Track marker visibility
+
+		      // Add the LineString
+
+		      lineData = geojsonData.features.filter(feature => feature.geometry.type === "LineString");
+		      let lineLayer = L.geoJSON(lineData, {
+			  style: { color: legendColor[k], weight: 4 },
+			  onEachFeature: function (feature, layer) {
+			      if (feature.geometry.type === "LineString") {
+                                  // create legend item
+				  // add toggle markers on click/highlight route on hover  event listeners, for both route itself and legend item
+				  layer.on("click", () => {
+				      if (markersVisible) {
+					  markers.forEach(m => m.removeFrom(map));
+				      } else {
+					  markers.forEach(m => m.addTo(map));
+				      }
+				      markersVisible = !markersVisible; // Toggle state
+				  });
+                                  itemLinks[1].textContent += dateFromPath(url);
+                                  itemLinks[0].href = generateGoogleMapsUrl(layer);
+                                  item.addEventListener("click", () => { 
+                                      if (markersVisible) { 
+                                          markers.forEach(m => m.removeFrom(map));
+                                      } else { console.log(feature);
+                                          markers.forEach(m => m.addTo(map));
+                                      }
+                                      markersVisible = !markersVisible; // Toggle state
+                                  });
+                                  item.addEventListener("mouseover", function () { 
+                                      layer.setStyle({ weight: 6 }); 
+                                      this.style.backgroundColor = '#cceeff';
+                                  });
+                                  item.addEventListener("mouseout", function () { 
+                                      layer.setStyle({ weight: 4 });
+                                      this.style.backgroundColor = '#ffffff';
+                                  });
+				  layer.on("mouseover", function () {
+				      this.setStyle({ weight: 6 }); // Increase thickness
+                                      item.style.backgroundColor = '#cceeff';
+				  });
+				  layer.on("mouseout", function () {
+				      this.setStyle({ weight: 4 }); // Reset to default
+                                      item.style.backgroundColor = '#ffffff';
+				  });
+			      }
+			  }
+		      }).addTo(map);
+
+		      // Process markers separately
+		      geojsonData.features.forEach(feature => {
+			  if (feature.geometry.type === "Point") {
+			      let marker = L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]]);
+			      markers.push(marker); // Store markers but don't add them initially
+			  }
+		      });
+	   
+		  })
+		  .catch(error => console.error("Error loading GeoJSON:", error));
+                  break;
+	      }
+	  }
+      })
+  .catch(error => console.error("Error fetching latest file:", error));
+{% endblock %}
+
+{% block buttons %}
+<div id="legend" style="padding: 10px; font-family: sans-serif;"></div>
+{% for key in list.keys() %}
+  <div class="legendItem" id="{{ key }}">
+    <div class="legendLine" style="background-color:{{ legendColor[key] }}"></div>
+    <div class="legendLabel">
+        {{ key }}
+        <span class="legendAux"><a href="#">map directions</a> / <a href="#">last update </a></span>
+    </div>
+  </div>
+{% endfor %}
+{% endblock %}
+
