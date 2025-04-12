@@ -1,1 +1,1 @@
-web: gunicorn ktfa_routes.app:app
+web: gunicorn ktfa_routes:app
