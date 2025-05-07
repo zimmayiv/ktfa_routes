@@ -33,53 +33,37 @@ select {
     {% include 'saveload.js' %}
 
 
-function formatDate(yyyymmdd) {
-  const year = yyyymmdd.toString().slice(0, 4);
-  const month = parseInt(yyyymmdd.toString().slice(4, 6)) - 1;
-  const day = yyyymmdd.toString().slice(6, 8);
-  
-  const date = new Date(year, month, day);
-  const options = { year: 'numeric', month: 'long', day: 'numeric' };
-  
-  return date.toLocaleDateString('en-US', options);
-}
-
 let lastHeadcount = 0;
 
 const name = '{{ name }}';
 
-fetch('../list')
-  .then(response => response.json())
-  .then(data => {
-     const urls = data[name];
-     for (let u in urls) {
-         let filename = urls[u].split('/').pop().split('.').slice(0, -1).join('.');
-         fetch('..'+urls[u]).then(response => response.json())
-             .then(geojsonData => {
-                 let opt = document.createElement("option");
-                 let nameParts = filename.split('-');
-                 opt.textContent = formatDate(nameParts[0]);
-                 if (nameParts[1]) {
-                     opt.textContent += ' (count ' + nameParts[1] + ')';
-                     if (u == 0) {
-                         lastHeadcount = nameParts[1];
-                     }
-                 }
-                 opt.addEventListener("click", function () {
-                     drawnItems.clearLayers();
-		     L.geoJSON(geojsonData, {
-			 onEachFeature: function (feature, layer) {
-			     if (feature.properties && feature.properties.popupContent) {
-				 layer.bindPopup(feature.properties.popupContent);
-			     }
-			     drawnItems.addLayer(layer);
-			 },
-		     }).addTo(map);
-                 });
-                 document.getElementById("selector").appendChild(opt); 
-             });
-     } 
-  });
+fetch('../list?route={{ name }}')
+    .then(response => response.json())
+    .then(data => {
+        for (let i in data) {
+            let count = data[i]['count'];
+            let dateData = data[i]['date'];
+            let geojsonData = data[i]['geojson'];
+	    let opt = document.createElement("option");
+	    opt.textContent = dateData;
+            opt.textContent += ' (count ' + count + ')';
+            if (i == 0) {
+		lastHeadcount = count;
+	    }
+	    opt.addEventListener("click", function () {
+		drawnItems.clearLayers();
+		L.geoJSON(geojsonData, {
+		    onEachFeature: function (feature, layer) {
+			if (feature.properties && feature.properties.popupContent) {
+		            layer.bindPopup(feature.properties.popupContent);
+                        }
+			drawnItems.addLayer(layer);
+		    },
+		}).addTo(map);
+	    });
+	    document.getElementById("selector").appendChild(opt);
+        }
+    });
 
     document.getElementById('update-btn').addEventListener('click', () => {
       const data = drawnItems.toGeoJSON();
@@ -97,15 +81,12 @@ fetch('../list')
 	  const dateString = today.toISOString().slice(0, 10).replace(/-/g, '');
 	  const headcount = prompt('Headcount:', lastHeadcount);
           if (headcount) {
-	      const filename = `${dateString}-${headcount}.geojson`;
-	      // todo: figure out what to do about counts. default, whether to require. if not, remove hyphen if empty
-	      // should /save have security? how would that even work? would need to re-prompt password, check it in post
 	      fetch('/save', {
 		  method: 'POST',
 		  headers: {
 		    'Content-Type': 'application/json',
 		    'route': '{{ name }}',
-		    'filename': filename
+		    'count': headcount
 	      },
 	      body: JSON.stringify(data)
 	      }).then(response => response.text())

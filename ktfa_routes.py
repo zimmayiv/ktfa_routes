@@ -1,9 +1,34 @@
 from flask import Flask, render_template, jsonify, request
 import os, json
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from sqlalchemy import Table, desc
+from datetime import date
+import ast
+
+database_url = os.environ.get('DATABASE_URL')
+
+if database_url and database_url.startswith('postgres:'):
+    database_url = database_url.replace('postgres:', 'postgresql:', 1)
+
+# what's the heroku postgres url?
+database_url = 'postgresql://yiv:postgres@localhost/postgres'
 
 app = Flask(__name__)
-
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+db = SQLAlchemy(app)
 GEOJSON_DIR = os.path.join(app.static_folder, "geojsons")
+
+class Update(db.Model):
+    __tablename__ = "route"
+    geojson = db.Column(db.String(4096), unique=True,nullable=True)
+    date = db.Column(db.Date, unique=False, nullable=False)
+    route = db.Column(db.String(64), nullable=True, unique=False)
+    id = db.Column(db.Integer, primary_key=True)
+    count = db.Column(db.Integer, nullable=False, unique=False)
+
+migrate = Migrate(app, db)
 
 legendColor = {
   '1st Baptist Church': '#ff7f50',
@@ -19,6 +44,9 @@ legendColor = {
   'Juanita Raiders': '#5e802f'
 }
 
+# places you need to replace files by postgres:
+# edit page
+# routes page
 
 def listGeojsons():
     try:
@@ -42,24 +70,36 @@ def listGeojsons():
     except Exception as e:
         return None
 
-@app.route('/list')
-def list_geojsons():
+@app.route('/list', methods=['GET'])
+def list():
     try:
-        # Get all .geojson files
-
-        file_urls = {}
-        for item in os.listdir(GEOJSON_DIR):
-            subfolder_path = os.path.join(GEOJSON_DIR, item)
-            if os.path.isdir(subfolder_path):
-                files = [
-                    f"/static/geojsons/{item}/{f}"
-                    for f in os.listdir(subfolder_path)
-                    if os.path.isfile(os.path.join(subfolder_path, f))
-                    and f.lower().endswith(".geojson")
+        if request.args.get('route'):
+            updates = Update.query.filter(Update.route == request.args.get('route')).order_by(desc(Update.date)).all()
+            updatelist = [
+                {
+                    'geojson': ast.literal_eval(u.geojson),
+                    'count': u.count,
+                    'route': u.route,
+                    'date': u.date.strftime("%B %-d, %Y")
+                }
+                for u in updates
+            ]
+            return jsonify(updatelist)
+        else:
+            result = {}
+            for key in legendColor:
+                updates = Update.query.filter(Update.route == key).order_by(desc(Update.date)).all()
+                updatelist = [
+                    { 
+                        'geojson': ast.literal_eval(u.geojson),
+                        'count': u.count,
+                        'route': u.route,
+                        'date': u.date.strftime("%B %-d, %Y")
+                    }
+                    for u in updates
                 ]
-                file_urls[item] = sorted(files, reverse=True)
-        return jsonify(file_urls)
-    
+                result[key] = updatelist
+            return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -70,13 +110,23 @@ def edit(name):
     else:
         return 'Invalid password. <a href="/">Go back.</a>'
 
-@app.route('/save', methods=['POST'])
+@app.route('/save',methods=['POST'])
 def save():
-    content = request.get_json()
-    filepath = 'static/geojsons/' + request.headers.get('route') + '/' + request.headers.get('filename')
-    with open(filepath, 'w') as f:
-        json.dump(content, f)
-    return 'File saved!'
+    geo = str(request.get_json())
+    rname = request.headers.get('route')
+    count = request.headers.get('count')
+    try:
+        new_update = Update(
+            geojson=geo,
+            date=date.today(), 
+            route=rname,
+            count=count
+        )
+        db.session.add(new_update)
+        db.session.commit()
+    except Exception as e:
+        return str(e)
+    return 'Route updated!'
 
 @app.route('/')
 def routes():
