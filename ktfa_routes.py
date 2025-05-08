@@ -44,31 +44,6 @@ legendColor = {
   'Juanita Raiders': '#5e802f'
 }
 
-# places you need to replace files by postgres:
-# edit page
-# routes page
-
-def listGeojsons():
-    try:
-        # Get all .geojson files
-
-        file_urls = {}
-        for item in os.listdir(GEOJSON_DIR):
-            subfolder_path = os.path.join(GEOJSON_DIR, item)
-            if os.path.isdir(subfolder_path):
-                files = [
-                    f"/static/geojsons/{item}/{f}"
-                    for f in os.listdir(subfolder_path)
-                    if os.path.isfile(os.path.join(subfolder_path, f))
-                    and f.lower().endswith(".geojson")
-                ]
-                file_urls[item] = files
-            # sort files by modification time (most recent first)
-            # files.sort(key=lambda f: os.path.getmtime(os.path.join(GEOJSON_DIR, f)), reverse=True) 
-        return file_urls
-    
-    except Exception as e:
-        return None
 
 @app.route('/list', methods=['GET'])
 def list():
@@ -130,7 +105,7 @@ def save():
 
 @app.route('/')
 def routes():
-    return render_template('routes.html', list=listGeojsons(), legendColor=legendColor)
+    return render_template('routes.html', legendColor=legendColor)
 
 @app.route('/draw')
 def draw():

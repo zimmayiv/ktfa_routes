@@ -138,7 +138,7 @@ fetch('/list')
 
 {% block buttons %}
 <div id="legend" style="padding: 10px; font-family: sans-serif;"></div>
-{% for key in list.keys() %}
+{% for key in legendColor.keys() %}
   <div class="legendItem" id="{{ key }}">
     <div class="legendLine" style="background-color:{{ legendColor[key] }}"></div>
     <div class="legendLabel">
