@@ -6,6 +6,7 @@ from sqlalchemy import Table, desc
 from datetime import date
 import ast
 
+is_prod = os.environ.get('IS_HEROKU', None)
 database_url = os.environ.get('DATABASE_URL', 'postgresql://yiv:postgres@localhost/postgres')
 
 if database_url and database_url.startswith('postgres:'):
@@ -78,9 +79,14 @@ def list():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+if is_prod:
+    password = os.environ.get('PASSWORD', None)
+else:
+    password = 'test'
+
 @app.route('/edit/<name>', methods=['POST'])
 def edit(name):
-    if request.form['password'] == 'test':
+    if request.form['password'] == password:
         return render_template('edit.html', name=name)
     else:
         return 'Invalid password. <a href="/">Go back.</a>'
