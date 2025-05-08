@@ -49,6 +49,7 @@ fetch('/list')
   .then(response => response.json())
   .then(data => {
       for (let k in data) {
+          console.log(k);
 	  let item = document.getElementById(k);
 	  let itemLinks = [...item.querySelectorAll("a")];
 	  itemLinks[1].addEventListener("click", function () {
