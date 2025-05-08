@@ -11,8 +11,8 @@ database_url = os.environ.get('DATABASE_URL')
 if database_url and database_url.startswith('postgres:'):
     database_url = database_url.replace('postgres:', 'postgresql:', 1)
 
-# what's the heroku postgres url?
-database_url = 'postgresql://yiv:postgres@localhost/postgres'
+# database_url = 'postgresql://yiv:postgres@localhost/postgres'
+# database_url = 'postgresql://u6cds5ph2mg9bn:p55712472465afaa9f9301a778d2ed8fa319dea44a12a5c5571a45da243929d4d@cc0gj7hsrh0ht8.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/da7jb2310e1ihp'
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
