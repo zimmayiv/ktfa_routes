@@ -6,7 +6,7 @@ from sqlalchemy import Table, desc
 from datetime import date
 import ast
 
-database_url = os.environ.get('DATABASE_URL')
+database_url = os.environ.get('DATABASE_URL', 'postgresql://yiv:postgres@localhost/postgres')
 
 if database_url and database_url.startswith('postgres:'):
     database_url = database_url.replace('postgres:', 'postgresql:', 1)
