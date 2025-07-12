@@ -23,7 +23,7 @@ GEOJSON_DIR = os.path.join(app.static_folder, "geojsons")
 
 class Update(db.Model):
     __tablename__ = "route"
-    geojson = db.Column(db.String(4096), unique=True,nullable=True)
+    geojson = db.Column(db.String(32768), unique=True,nullable=True)
     date = db.Column(db.Date, unique=False, nullable=False)
     route = db.Column(db.String(64), nullable=True, unique=False)
     id = db.Column(db.Integer, primary_key=True)
@@ -45,6 +45,17 @@ legendColor = {
   'Juanita Raiders': '#5e802f'
 }
 
+@app.route('/counts')
+def count():
+    return_json = {}
+    try:
+        for route in legendColor.keys():
+            last = Update.query.filter(Update.route == route).order_by(desc(Update.date)).first()
+            if last:
+                return_json[route] = {'count': last.count, 'date': last.date} 
+    except Exception as e:
+        return 'Error: ' + str(e)
+    return jsonify(return_json), 500
 
 @app.route('/list', methods=['GET'])
 def list():
