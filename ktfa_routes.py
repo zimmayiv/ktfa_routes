@@ -18,7 +18,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 db = SQLAlchemy(app)
 
 if is_prod:
-    accessword = os.environment.get('ACCESSWORD', None)
+    accessword = os.environ.get('ACCESSWORD', None)
     password = os.environ.get('PASSWORD', None)
 else:
     accessword = 'test'
