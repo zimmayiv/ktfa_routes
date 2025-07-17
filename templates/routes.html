@@ -45,95 +45,110 @@ const legend = document.getElementById('legend');
 
 let legendColor = {{ legendColor | tojson }};
 
-fetch('/list')
-  .then(response => response.json())
-  .then(data => {
-      for (let k in data) {
-          console.log(k);
-	  let item = document.getElementById(k);
-	  let itemLinks = [...item.querySelectorAll("a")];
-	  itemLinks[1].addEventListener("click", function () {
-	      const password = prompt("Enter password to edit/view count: ");
-	      if (password) {
-		const form = document.createElement("form");
-		form.method = "POST";
-		form.action = '/edit/' + k;
+let data = {{ data | tojson }};
 
-		const passwordField = document.createElement("input");
-		passwordField.type = "hidden";
-		passwordField.name = "password";
-		passwordField.value = password;
+for (let k in data) {
+    console.log(k);
+    let item = document.getElementById(k);
+    let itemLinks = [...item.querySelectorAll("a")];
+    
+    itemLinks[1].addEventListener("click", function () {
+        const password = prompt("Enter password to edit/view count: ");
+        if (password) {
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = '/edit/' + k;
 
-		form.appendChild(passwordField);
-		document.body.appendChild(form);
-		form.submit();
-	      }
-	  });
-	  for (let i in data[k]) {
-              let count = data[k][i]['count'];
-              let dateData = data[k][i]['date'];
-              let geojsonData = data[k][i]['geojson'];
-		      let markers = []; // Store markers separately
-		      let markersVisible = false; // Track marker visibility
+            const passwordField = document.createElement("input");
+            passwordField.type = "hidden";
+            passwordField.name = "password";
+            passwordField.value = password;
 
-		      // Add the LineString
+            form.appendChild(passwordField);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
 
-		      lineData = geojsonData.features.filter(feature => feature.geometry.type === "LineString");
-		      let lineLayer = L.geoJSON(lineData, {
-			  style: { color: legendColor[k], weight: 4 },
-			  onEachFeature: function (feature, layer) {
-			      if (feature.geometry.type === "LineString") {
-                                  // create legend item
-				  // add toggle markers on click/highlight route on hover  event listeners, for both route itself and legend item
-				  layer.on("click", () => {
-				      if (markersVisible) {
-					  markers.forEach(m => m.removeFrom(map));
-				      } else {
-					  markers.forEach(m => m.addTo(map));
-				      }
-				      markersVisible = !markersVisible; // Toggle state
-				  });
-                                  if (i === "0") { itemLinks[1].textContent += dateData; }
-                                  itemLinks[0].href = generateGoogleMapsUrl(layer);
-                                  item.addEventListener("click", () => { 
-                                      if (markersVisible) { 
-                                          markers.forEach(m => m.removeFrom(map));
-                                      } else { console.log(feature);
-                                          markers.forEach(m => m.addTo(map));
-                                      }
-                                      markersVisible = !markersVisible; // Toggle state
-                                  });
-                                  item.addEventListener("mouseover", function () { 
-                                      layer.setStyle({ weight: 6 }); 
-                                      this.style.backgroundColor = '#cceeff';
-                                  });
-                                  item.addEventListener("mouseout", function () { 
-                                      layer.setStyle({ weight: 4 });
-                                      this.style.backgroundColor = '#ffffff';
-                                  });
-				  layer.on("mouseover", function () {
-				      this.setStyle({ weight: 6 }); // Increase thickness
-                                      item.style.backgroundColor = '#cceeff';
-				  });
-				  layer.on("mouseout", function () {
-				      this.setStyle({ weight: 4 }); // Reset to default
-                                      item.style.backgroundColor = '#ffffff';
-				  });
-			      }
-			  }
-		      }).addTo(map);
+    for (let i in data[k]) {
+        let count = data[k][i]['count'];
+        let dateData = data[k][i]['date'];
+        let geojsonData = data[k][i]['geojson'];
 
-		      // Process markers separately
-		      geojsonData.features.forEach(feature => {
-			  if (feature.geometry.type === "Point") {
-			      let marker = L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]]);
-			      markers.push(marker); // Store markers but don't add them initially
-			  }
-		      });
-	      } 
-	  }
-      })
-  .catch(error => console.error("Error fetching route histories:", error));
+        let markers = [];
+        let markersVisible = false;
+
+        // Filter for LineString features
+        let lineData = geojsonData.features.filter(
+            feature => feature.geometry.type === "LineString"
+        );
+
+        let lineLayer = L.geoJSON(lineData, {
+            style: { color: legendColor[k], weight: 4 },
+            onEachFeature: function (feature, layer) {
+                if (feature.geometry.type === "LineString") {
+                    layer.on("click", () => {
+                        if (markersVisible) {
+                            markers.forEach(m => m.removeFrom(map));
+                        } else {
+                            markers.forEach(m => m.addTo(map));
+                        }
+                        markersVisible = !markersVisible;
+                    });
+
+                    if (i === "0") {
+                        itemLinks[1].textContent += dateData;
+                    }
+
+                    itemLinks[0].href = generateGoogleMapsUrl(layer);
+
+                    item.addEventListener("click", () => {
+                        if (markersVisible) {
+                            markers.forEach(m => m.removeFrom(map));
+                        } else {
+                            console.log(feature);
+                            markers.forEach(m => m.addTo(map));
+                        }
+                        markersVisible = !markersVisible;
+                    });
+
+                    item.addEventListener("mouseover", function () {
+                        layer.setStyle({ weight: 6 });
+                        this.style.backgroundColor = '#cceeff';
+                    });
+
+                    item.addEventListener("mouseout", function () {
+                        layer.setStyle({ weight: 4 });
+                        this.style.backgroundColor = '#ffffff';
+                    });
+
+                    layer.on("mouseover", function () {
+                        this.setStyle({ weight: 6 });
+                        item.style.backgroundColor = '#cceeff';
+                    });
+
+                    layer.on("mouseout", function () {
+                        this.setStyle({ weight: 4 });
+                        item.style.backgroundColor = '#ffffff';
+                    });
+                }
+            }
+        }).addTo(map);
+
+        // Create but do not add Point markers
+        geojsonData.features.forEach(feature => {
+            if (feature.geometry.type === "Point") {
+                let marker = L.marker([
+                    feature.geometry.coordinates[1],
+                    feature.geometry.coordinates[0]
+                ]);
+                markers.push(marker);
+            }
+        });
+    }
+}
+
+
 {% endblock %}
 
 {% block buttons %}

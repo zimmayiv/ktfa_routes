@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, make_response
 import os, json
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -12,14 +12,17 @@ database_url = os.environ.get('DATABASE_URL', 'postgresql://yiv:postgres@localho
 if database_url and database_url.startswith('postgres:'):
     database_url = database_url.replace('postgres:', 'postgresql:', 1)
 
-# database_url = 'postgresql://yiv:postgres@localhost/postgres'
-# database_url = 'postgresql://u6cds5ph2mg9bn:p55712472465afaa9f9301a778d2ed8fa319dea44a12a5c5571a45da243929d4d@cc0gj7hsrh0ht8.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/da7jb2310e1ihp'
-
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 db = SQLAlchemy(app)
-GEOJSON_DIR = os.path.join(app.static_folder, "geojsons")
+
+if is_prod:
+    accessword = os.environment.get('ACCESSWORD', None)
+    password = os.environ.get('PASSWORD', None)
+else:
+    accessword = 'test'
+    password = 'test'
 
 class Update(db.Model):
     __tablename__ = "route"
@@ -45,6 +48,11 @@ legendColor = {
   'Juanita Raiders': '#5e802f'
 }
 
+@app.before_request
+def check_specialk_cookie():
+    if request.cookies.get('specialk') != accessword and request.path != '/':
+        return make_response('sorry', 403)
+
 @app.route('/counts')
 def count():
     return_json = {}
@@ -57,11 +65,11 @@ def count():
         return 'Error: ' + str(e)
     return jsonify(return_json), 500
 
-@app.route('/list', methods=['GET'])
-def list():
+
+def listem(route):
     try:
-        if request.args.get('route'):
-            updates = Update.query.filter(Update.route == request.args.get('route')).order_by(desc(Update.date)).all()
+        if route:
+            updates = Update.query.filter(Update.route == route).order_by(desc(Update.date)).all()
             updatelist = [
                 {
                     'geojson': ast.literal_eval(u.geojson),
@@ -71,7 +79,7 @@ def list():
                 }
                 for u in updates
             ]
-            return jsonify(updatelist)
+            return updatelist
         else:
             result = {}
             for key in legendColor:
@@ -86,19 +94,25 @@ def list():
                     for u in updates
                 ]
                 result[key] = updatelist
-            return jsonify(result)
+            return result
     except Exception as e:
+        raise e
+
+@app.route('/list', methods=['GET'])
+def list_api():
+    try:
+        if request.args.get('route'):
+            return jsonify(listem(request.args.get('route')))
+        else:
+            return jsonify(listem(None))
+    except Exception as e: 
         return jsonify({"error": str(e)}), 500
 
-if is_prod:
-    password = os.environ.get('PASSWORD', None)
-else:
-    password = 'test'
 
 @app.route('/edit/<name>', methods=['POST'])
 def edit(name):
     if request.form['password'] == password:
-        return render_template('edit.html', name=name)
+        return render_template('edit.html', name=name, data=listem(name))
     else:
         return 'Invalid password. <a href="/">Go back.</a>'
 
@@ -122,7 +136,15 @@ def save():
 
 @app.route('/')
 def routes():
-    return render_template('routes.html', legendColor=legendColor)
+    if request.cookies.get('specialk') != accessword:
+        return '''
+                <script>
+                    const value = prompt("Who are you?");
+                    document.cookie = "specialk=" + encodeURIComponent(value) + "; path=/";
+                    location.reload();
+                </script>
+            '''
+    return render_template('routes.html', legendColor=legendColor, data=listem(None))
 
 @app.route('/draw')
 def draw():

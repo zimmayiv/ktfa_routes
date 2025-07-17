@@ -35,35 +35,32 @@ select {
 
 let lastHeadcount = 0;
 
-const name = '{{ name }}';
+let data = {{ data | tojson }};
 
-fetch('../list?route={{ name }}')
-    .then(response => response.json())
-    .then(data => {
-        for (let i in data) {
-            let count = data[i]['count'];
-            let dateData = data[i]['date'];
-            let geojsonData = data[i]['geojson'];
-	    let opt = document.createElement("option");
-	    opt.textContent = dateData;
-            opt.textContent += ' (count ' + count + ')';
-            if (i == 0) {
-		lastHeadcount = count;
-	    }
-	    opt.addEventListener("click", function () {
-		drawnItems.clearLayers();
-		L.geoJSON(geojsonData, {
-		    onEachFeature: function (feature, layer) {
-			if (feature.properties && feature.properties.popupContent) {
-		            layer.bindPopup(feature.properties.popupContent);
-                        }
-			drawnItems.addLayer(layer);
-		    },
-		}).addTo(map);
-	    });
-	    document.getElementById("selector").appendChild(opt);
-        }
+for (let i in data) {
+    let count = data[i]['count'];
+    let dateData = data[i]['date'];
+    let geojsonData = data[i]['geojson'];
+    let opt = document.createElement("option");
+    opt.textContent = dateData;
+    opt.textContent += ' (count ' + count + ')';
+    if (i == 0) {
+        lastHeadcount = count;
+    }
+    opt.addEventListener("click", function () {
+        drawnItems.clearLayers();
+        L.geoJSON(geojsonData, {
+            onEachFeature: function (feature, layer) {
+                if (feature.properties && feature.properties.popupContent) {
+                    layer.bindPopup(feature.properties.popupContent);
+                }
+                drawnItems.addLayer(layer);
+            },
+        }).addTo(map);
     });
+    document.getElementById("selector").appendChild(opt);
+}
+
 
     document.getElementById('update-btn').addEventListener('click', () => {
       const data = drawnItems.toGeoJSON();
