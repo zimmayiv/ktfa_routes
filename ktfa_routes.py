@@ -48,10 +48,10 @@ legendColor = {
   'Juanita Raiders': '#5e802f'
 }
 
-@app.before_request
-def check_specialk_cookie():
-    if request.cookies.get('specialk') != accessword and request.path != '/':
-        return make_response('sorry', 403)
+#@app.before_request
+#def check_specialk_cookie():
+#    if request.cookies.get('specialk') != accessword and request.path != '/':
+#        return make_response('sorry', 403)
 
 @app.route('/counts')
 def count():
@@ -136,14 +136,14 @@ def save():
 
 @app.route('/')
 def routes():
-    if request.cookies.get('specialk') != accessword:
-        return '''
-                <script>
-                    const value = prompt("Who are you?");
-                    document.cookie = "specialk=" + encodeURIComponent(value) + "; path=/";
-                    location.reload();
-                </script>
-            '''
+#    if request.cookies.get('specialk') != accessword:
+#        return '''
+#                <script>
+#                    const value = prompt("Who are you?");
+#                    document.cookie = "specialk=" + encodeURIComponent(value) + "; path=/";
+#                    location.reload();
+#                </script>
+#            '''
     return render_template('routes.html', legendColor=legendColor, data=listem(None))
 
 @app.route('/draw')
