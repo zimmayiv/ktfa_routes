@@ -1,0 +1,109 @@
+{% extends "mapbase.html" %}
+
+{% block title %}Update route {{ name }}{% endblock %}
+
+
+{% block scripts %}
+
+    document.getElementById('update-btn').addEventListener('click', () => {
+      const data = drawnItems.toGeoJSON();
+      let lineCount = 0;
+      drawnItems.eachLayer(layer => {
+          // Convert to GeoJSON and check geometry type
+          const geojson = layer.toGeoJSON();
+          if (geojson.geometry.type === 'LineString') {
+              lineCount++;
+          }
+      });
+
+      if (lineCount == 1) {
+  	  const today = new Date();
+	  const dateString = today.toISOString().slice(0, 10).replace(/-/g, '');
+	  const headcount = prompt('Headcount:', lastHeadcount);
+          if (headcount) {
+	      fetch('/save', {
+		  method: 'POST',
+		  headers: {
+		    'Content-Type': 'application/json',
+		    'route': '{{ name }}',
+		    'count': headcount
+	      },
+	      body: JSON.stringify(data)
+	      }).then(response => response.text())
+	      .then(result => alert(result)).then(() => window.location.href = "/");
+          }
+          else {
+              alert("Please enter a whole number headcount.");
+          }
+      } else {
+          alert("Please make sure there is exactly one line drawn.");
+      }
+    }  
+    );
+
+    function placeMarker() {
+	if (navigator.geolocation) {
+	  navigator.geolocation.getCurrentPosition(
+	    (position) => {
+	      const lat = position.coords.latitude;
+	      const lng = position.coords.longitude;
+
+	      // Add a marker and center the map
+	      const marker = L.marker([lat, lng]).addTo(map);
+	      marker.bindPopup("You are here!").openPopup();
+
+	      map.setView([lat, lng], 15); // Zoom in
+	    },
+	    (error) => {
+	      alert("Geolocation failed: " + error.message);
+	    }
+	  );
+	} else {
+	  alert("Geolocation is not supported by your browser.");
+	}
+    }
+
+  let userMarker = null;
+
+  if (navigator.geolocation) {
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        if (!userMarker) {
+          userMarker = L.marker([lat, lng]).addTo(map)
+            .bindPopup("You're here").openPopup();
+          map.setView([lat, lng], 15);
+        } else {
+          userMarker.setLatLng([lat, lng]);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error.message);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 10000,
+        timeout: 5000
+      }
+    );
+
+    // Optional: to stop watching later
+    // navigator.geolocation.clearWatch(watchId);
+  } else {
+    alert("Geolocation is not supported by your browser.");
+  }
+      {% endblock %}
+
+{% block buttons %}
+<button class="tooltip-button">
+    ?
+    <span class="tooltip">
+    </span>
+  </button>
+
+
+<div class="update" style="padding-top:10px;"><button id="update-btn">Update route</button></div>
+
+{% endblock %}

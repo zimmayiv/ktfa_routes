@@ -9,19 +9,48 @@ select {
     min-width: 100px;
 }
 
-#secondary-buttons {
-    text-color: #667777;
-    font-size: 11pt;
+.dropdown {
+  position: relative;
+  display: inline-block;
+  width: 200px;
+  font-family: sans-serif;
+  user-select: none;
 }
 
-#update-btn {
-    display: block;
-    margin: auto;
-    color: #ffffff;
-    font-size: 15pt;
-    background-color: #3344aa;
-    border-radius: 10px;
-    padding: 10px;
+.dropdown-selected {
+  padding: 10px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.dropdown-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid #ccc;
+  border-top: none;
+  background-color: #fff;
+  z-index: 1000;
+  display: none;
+}
+
+.dropdown-options li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.dropdown-options li:hover {
+  background-color: #f0f0f0;
+}
+
+/* Optional: transition for smoother appearance */
+.dropdown-options.show {
+  display: block;
 }
 </style>
 
@@ -32,6 +61,30 @@ select {
 
     {% include 'saveload.js' %}
 
+// dropdown menu
+
+const dropdown = document.querySelector('.dropdown');
+const selected = dropdown.querySelector('.dropdown-selected');
+const options = dropdown.querySelector('.dropdown-options');
+
+selected.addEventListener('click', () => {
+  options.classList.toggle('show');
+});
+
+options.addEventListener('click', (e) => {
+  if (e.target.tagName === 'LI') {
+    selected.textContent = e.target.textContent;
+    options.classList.remove('show');
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (!dropdown.contains(e.target)) {
+    options.classList.remove('show');
+  }
+});
+
+// main logic
 
 let lastHeadcount = 0;
 
@@ -41,7 +94,7 @@ for (let i in data) {
     let count = data[i]['count'];
     let dateData = data[i]['date'];
     let geojsonData = data[i]['geojson'];
-    let opt = document.createElement("option");
+    let opt = document.createElement("li");
     opt.textContent = dateData;
     opt.textContent += ' (count ' + count + ')';
     if (i == 0) {
@@ -97,8 +150,7 @@ for (let i in data) {
       }
     }  
     );
-
-{% endblock %}
+      {% endblock %}
 
 {% block buttons %}
 <button class="tooltip-button">
@@ -117,11 +169,14 @@ for (let i in data) {
 
 <div class="controls">
 Load previous version of route:
-<select id="selector">
-<option></option>
-</select>
 
-<button id="update-btn">Update route</button>
+<div class="dropdown">
+  <div class="dropdown-selected"></div>
+  <ul id="selector" class="dropdown-options">
+  </ul>
+</div>
+
+<div class="update" style="padding-top:10px;"><button id="update-btn">Update route</button></div>
 </div>
 
 <details id="secondary-buttons">

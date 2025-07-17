@@ -154,5 +154,9 @@ def draw():
 def base():
     return render_template('mapbase.html')
 
+@app.route('/trace')
+def trace():
+    return render_template('trace.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
