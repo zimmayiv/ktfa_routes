@@ -154,9 +154,12 @@ def draw():
 def base():
     return render_template('mapbase.html')
 
-@app.route('/trace')
-def trace():
-    return render_template('trace.html')
+@app.route('/trace/<name>', methods=['POST'])
+def trace(name):
+    if request.form['password'] == password:
+        return render_template('trace.html', name=name)
+    else:
+        return 'Invalid password. <a href="/">Go back.</a>'
 
 if __name__ == '__main__':
     app.run(debug=True)

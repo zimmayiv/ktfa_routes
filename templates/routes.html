@@ -53,7 +53,7 @@ for (let k in data) {
     let itemLinks = [...item.querySelectorAll("a")];
     
     itemLinks[1].addEventListener("click", function () {
-        const password = prompt("Enter password to edit/view count: ");
+        const password = prompt("Enter password to edit: ");
         if (password) {
             const form = document.createElement("form");
             form.method = "POST";
@@ -70,6 +70,23 @@ for (let k in data) {
         }
     });
 
+    itemLinks[2].addEventListener("click", function () {
+        const password = prompt("Enter password to edit by tracing: ");
+        if (password) {
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = '/trace/' + k;
+
+            const passwordField = document.createElement("input");
+            passwordField.type = "hidden";
+            passwordField.name = "password";
+            passwordField.value = password;
+
+            form.appendChild(passwordField);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
     for (let i in data[k]) {
         let count = data[k][i]['count'];
         let dateData = data[k][i]['date'];
@@ -158,7 +175,7 @@ for (let k in data) {
     <div class="legendLine" style="background-color:{{ legendColor[key] }}"></div>
     <div class="legendLabel">
         {{ key }}
-        <span class="legendAux"><a href="#">map directions</a> / <a href="#">last update </a></span>
+        <span class="legendAux"><a href="#">map directions</a> / <a href="#">edit - last update </a> / <a href="#">edit by dropping stops</a></span>
     </div>
   </div>
 {% endfor %}

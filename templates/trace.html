@@ -1,9 +1,56 @@
 {% extends "mapbase.html" %}
 
 {% block title %}Update route {{ name }}{% endblock %}
+{% block styles %}
+<style type="text/css">
+  .pulse-marker {
+    width: 20px;
+    height: 20px;
+    background: rgba(0, 136, 255, 0.4);
+    border: 4px solid #0088ff;
+    border-radius: 50%;
+    position: relative;
+    animation: pulse 2s infinite;
+  }
 
+  @keyframes pulse {
+    0% {
+      transform: scale(0.7);
+      opacity: 0.8;
+    }
+    70% {
+      transform: scale(0.5);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(0.6);
+      opacity: 0.7;
+    }
+  }
+  .numbered-marker {
+    background-image: url('https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png');
+    background-size: contain;
+    width: 25px;
+    height: 41px;
+    position: relative;
+    text-align: center;
+    font-weight: bold;
+    color: pink;
+    line-height: 41px;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;  
+  }
+</style>
+{% endblock %}
 
 {% block scripts %}
+
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    const lineCoords = []; // stores the latlngs
+    const polyline = L.polyline(lineCoords, { color: 'red' }).addTo(drawnItems);
+
+    document.getElementById('place-btn').addEventListener('click', addStop);
 
     document.getElementById('update-btn').addEventListener('click', () => {
       const data = drawnItems.toGeoJSON();
@@ -40,8 +87,18 @@
       }
     }  
     );
+    let i = 1;
+    function labelIcon(c) {
+	const createdIcon = L.divIcon({
+	  className: '',  // Use custom class instead
+	  html: '<div class="numbered-marker">' + c.toString() + '</div>',
+	  iconSize: [25, 41],
+	  iconAnchor: [12, 41]
+	});
+        return createdIcon;
+    }
 
-    function placeMarker() {
+    function addStop() {
 	if (navigator.geolocation) {
 	  navigator.geolocation.getCurrentPosition(
 	    (position) => {
@@ -49,10 +106,13 @@
 	      const lng = position.coords.longitude;
 
 	      // Add a marker and center the map
-	      const marker = L.marker([lat, lng]).addTo(map);
-	      marker.bindPopup("You are here!").openPopup();
+	      const marker = L.marker([lat, lng], { icon: labelIcon(i) });
+              drawnItems.addLayer(marker);
+ 
+	      lineCoords.push([lat,lng]);
+	      polyline.setLatLngs(lineCoords);
 
-	      map.setView([lat, lng], 15); // Zoom in
+              i++;
 	    },
 	    (error) => {
 	      alert("Geolocation failed: " + error.message);
@@ -64,6 +124,12 @@
     }
 
   let userMarker = null;
+  const trackingIcon = L.divIcon({
+    className: '', // don't add default styles
+    html: '<div class="pulse-marker"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  });
 
   if (navigator.geolocation) {
     const watchId = navigator.geolocation.watchPosition(
@@ -72,8 +138,7 @@
         const lng = position.coords.longitude;
 
         if (!userMarker) {
-          userMarker = L.marker([lat, lng]).addTo(map)
-            .bindPopup("You're here").openPopup();
+          userMarker = L.marker([lat, lng], { icon: trackingIcon } ).addTo(map);
           map.setView([lat, lng], 15);
         } else {
           userMarker.setLatLng([lat, lng]);
@@ -103,6 +168,7 @@
     </span>
   </button>
 
+<div class="place" style="padding-top:10px;"><button id="place-btn">Place stop</button></div>
 
 <div class="update" style="padding-top:10px;"><button id="update-btn">Update route</button></div>
 
