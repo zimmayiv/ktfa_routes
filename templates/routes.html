@@ -88,6 +88,7 @@ for (let k in data) {
         }
     });
     for (let i in data[k]) {
+        if (i != 0) { continue; }
         let count = data[k][i]['count'];
         let dateData = data[k][i]['date'];
         let geojsonData = data[k][i]['geojson'];
