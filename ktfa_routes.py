@@ -14,7 +14,22 @@ if database_url and database_url.startswith('postgres:'):
     database_url = database_url.replace('postgres:', 'postgresql:', 1)
 
 app = Flask(__name__)
-Talisman(app)
+talisman = Talisman(app)
+
+# Content Security Policy (CSP) Header
+csp = {
+    'default-src': [
+        '\'self\'',
+        'https://unpkg.com',
+        'https://cdnjs.cloudflare.com/'
+    ],
+    'script-src': ["'self'", "'unsafe-inline'"],  # allow inline scripts
+    'style-src': ["'self'", "'unsafe-inline'"],   # optional, if you use inline styles too
+}
+talisman.force_https = True
+talisman.content_security_policy = csp
+
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 db = SQLAlchemy(app)
