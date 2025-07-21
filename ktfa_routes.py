@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request, make_response
+from flask_talisman import Talisman
 import os, json
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -13,6 +14,7 @@ if database_url and database_url.startswith('postgres:'):
     database_url = database_url.replace('postgres:', 'postgresql:', 1)
 
 app = Flask(__name__)
+Talisman(app)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 db = SQLAlchemy(app)
