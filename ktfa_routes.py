@@ -18,15 +18,11 @@ talisman = Talisman(app)
 
 # Content Security Policy (CSP) Header
 csp = {
-    'default-src': [
-        '\'self\'',
-        "'unsafe-inline'"
-    ],
-    'script-src': ["'self'", 
+    'default-src': ["'self'", 
                    'https://unpkg.com',
                    'https://cdnjs.cloudflare.com/',
-                   "'unsafe-inline'"],  # allow inline scripts
-    'style-src': ["'self'", "'unsafe-inline'"],   # optional, if you use inline styles too
+                   "'unsafe-inline'",
+                   'https://*.openstreetmap.org'
 }
 talisman.force_https = True
 talisman.content_security_policy = csp
