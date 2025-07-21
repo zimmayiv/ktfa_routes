@@ -20,10 +20,12 @@ talisman = Talisman(app)
 csp = {
     'default-src': [
         '\'self\'',
-        'https://unpkg.com',
-        'https://cdnjs.cloudflare.com/'
+        "'unsafe-inline'"
     ],
-    'script-src': ["'self'", "'unsafe-inline'"],  # allow inline scripts
+    'script-src': ["'self'", 
+                   'https://unpkg.com',
+                   'https://cdnjs.cloudflare.com/',
+                   "'unsafe-inline'"],  # allow inline scripts
     'style-src': ["'self'", "'unsafe-inline'"],   # optional, if you use inline styles too
 }
 talisman.force_https = True
