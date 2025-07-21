@@ -22,7 +22,7 @@ csp = {
                    'https://unpkg.com',
                    'https://cdnjs.cloudflare.com/',
                    "'unsafe-inline'",
-                   'https://*.openstreetmap.org'
+                   'https://*.openstreetmap.org']
 }
 talisman.force_https = True
 talisman.content_security_policy = csp
