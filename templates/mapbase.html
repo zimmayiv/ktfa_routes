@@ -53,20 +53,16 @@
     function generateGoogleMapsUrl(lineStringLayer) {
       // Extract the coordinates from the LineString layer
       const coordinates = lineStringLayer.toGeoJSON().geometry.coordinates;
-
-      // Check if there are at least two coordinates (start and end point)
-      if (coordinates.length < 2) {
-        console.error("LineString must have at least two coordinates for navigation.");
-        return null;
+      let waypoints = null;
+      if (coordinates.length > 2) {
+        // Format the coordinates for Google Maps
+        waypoints = coordinates
+          .slice(1, -1) // Exclude the start and end points for waypoints
+          .map(coord => coord.reverse().join(",")) // Reverse [lng, lat] to [lat, lng]
+          .join("|");
       }
-      // Format the coordinates for Google Maps
-      const waypoints = coordinates
-        .slice(1, -1) // Exclude the start and end points for waypoints
-        .map(coord => coord.reverse().join(",")) // Reverse [lng, lat] to [lat, lng]
-        .join("|");
-
-      const start = coordinates[0].reverse().join(","); // First coordinate as start
-      const end = coordinates[coordinates.length - 1].reverse().join(","); // Last coordinate as end
+      const start = coordinates[0][1] + "," +  coordinates[0][0]; // First coordinate as start
+      const end = coordinates[coordinates.length - 1][1] + "," + coordinates[coordinates.length-1][0]; // Last coordinate as end
 
       // Construct the Google Maps URL
       let googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${start}&destination=${end}`;

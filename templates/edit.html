@@ -127,9 +127,7 @@ for (let i in data) {
       });
 
       if (lineCount == 1) {
-  	  const today = new Date();
-	  const dateString = today.toISOString().slice(0, 10).replace(/-/g, '');
-	  const headcount = prompt('Headcount:', lastHeadcount);
+	  const headcount = prompt('Estimated kits needed:', lastHeadcount);
           if (headcount) {
 	      fetch('/save', {
 		  method: 'POST',
@@ -143,7 +141,7 @@ for (let i in data) {
 	      .then(result => alert(result)).then(() => window.location.href = "/");
           }
           else {
-              alert("Please enter a whole number headcount.");
+              alert("Please enter a whole number.");
           }
       } else {
           alert("Please make sure there is exactly one line drawn.");

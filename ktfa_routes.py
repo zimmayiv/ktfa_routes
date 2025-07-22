@@ -4,7 +4,7 @@ import os, json
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from sqlalchemy import Table, desc
-from datetime import date
+from datetime import datetime
 import ast
 
 is_prod = os.environ.get('IS_HEROKU', None)
@@ -14,18 +14,19 @@ if database_url and database_url.startswith('postgres:'):
     database_url = database_url.replace('postgres:', 'postgresql:', 1)
 
 app = Flask(__name__)
-talisman = Talisman(app)
+if is_prod:
+    talisman = Talisman(app)
 
-# Content Security Policy (CSP) Header
-csp = {
-    'default-src': ["'self'", 
-                   'https://unpkg.com',
-                   'https://cdnjs.cloudflare.com/',
-                   "'unsafe-inline'",
-                   'https://*.openstreetmap.org']
-}
-talisman.force_https = True
-talisman.content_security_policy = csp
+    # Content Security Policy (CSP) Header
+    csp = {
+	'default-src': ["'self'", 
+		       'https://unpkg.com',
+		       'https://cdnjs.cloudflare.com/',
+		       "'unsafe-inline'",
+		       'https://*.openstreetmap.org']
+    }
+    talisman.force_https = True
+    talisman.content_security_policy = csp
 
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -42,13 +43,14 @@ else:
 class Update(db.Model):
     __tablename__ = "route"
     geojson = db.Column(db.String(32768), unique=True,nullable=True)
-    date = db.Column(db.Date, unique=False, nullable=False)
+    date = db.Column(db.DateTime, unique=False, nullable=False)
     route = db.Column(db.String(64), nullable=True, unique=False)
     id = db.Column(db.Integer, primary_key=True)
     count = db.Column(db.Integer, nullable=False, unique=False)
 
 migrate = Migrate(app, db)
 
+# avoid special chars like apostrophes! i haven't set it up to encode/decode correctly everywhere
 legendColor = {
   '1st Baptist Church': '#ff7f50',
   'Lafayette Park': '#87cefa',
@@ -56,7 +58,7 @@ legendColor = {
   'Olympic': '#32cd32',
   'Seoul Park': '#6495ed',
   'Shatto': '#ff69b4',
-  "Sherin's Floater": '#ba55d3',
+  "Sherinfloater": '#ba55d3',
   '6th Street': '#cd5c5c',
   '8th Street': '#ffa500',
   'Parkview': '#40e0d0',
@@ -139,7 +141,7 @@ def save():
     try:
         new_update = Update(
             geojson=geo,
-            date=date.today(), 
+            date=datetime.now(), 
             route=rname,
             count=count
         )
