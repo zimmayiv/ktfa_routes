@@ -42,7 +42,7 @@ else:
 
 class Update(db.Model):
     __tablename__ = "route"
-    geojson = db.Column(db.String(32768), unique=True,nullable=True)
+    geojson = db.Column(db.String(32768), unique=False,nullable=True)
     date = db.Column(db.DateTime, unique=False, nullable=False)
     route = db.Column(db.String(64), nullable=True, unique=False)
     id = db.Column(db.Integer, primary_key=True)
