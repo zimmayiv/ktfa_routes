@@ -51,6 +51,7 @@ class Update(db.Model):
 migrate = Migrate(app, db)
 
 # avoid special chars like apostrophes! i haven't set it up to encode/decode correctly everywhere
+# this actually is the master control for what routes there are hahahahahaha
 legendColor = {
   '1st Baptist Church': '#ff7f50',
   'Lafayette Park': '#87cefa',
@@ -58,7 +59,8 @@ legendColor = {
   'Olympic': '#32cd32',
   'Seoul Park': '#6495ed',
   'Shatto': '#ff69b4',
-  "Sherinfloater": '#ba55d3',
+  'Sherinfloater': '#ba55d3',
+  '3rd Street': '#004233',
   '6th Street': '#cd5c5c',
   '8th Street': '#ffa500',
   'Parkview': '#40e0d0',
