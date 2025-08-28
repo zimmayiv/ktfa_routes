@@ -31,7 +31,7 @@
   <script>
     // BASE MAP SCRIPT START
     // Initialize the map
-    const map = L.map('map').setView([34.058294, -118.298108], 14);
+    const map = L.map('map').setView([34.059294, -118.298108], 14);
 
     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -47,7 +47,7 @@
         });
 
         // Add marker with cross icon
-        L.marker([34.06154444, -118.2945], { icon: crossIcon }).addTo(map);
+        L.marker([34.06144444, -118.2945], { icon: crossIcon }).addTo(map);
     // BASE MAP SCRIPT END
 
     function generateGoogleMapsUrl(lineStringLayer) {
